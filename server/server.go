@@ -1,13 +1,9 @@
 package server
 
 import (
-	"os"
-	"io/ioutil"
-	"encoding/json"
+	"github.com/aidaco/eventserver/eventmap"
 	"net/http"
 	"net/url"
-	"github.com/2sdat/eventserver/eventmap"
-	"github.com/2sdat/eventserver/log"
 )
 
 const esPORT = "8080"
@@ -37,6 +33,6 @@ type Response interface {
 	Writer() *http.ResponseWriter
 }
 
-func DefaultServer(em *eventmap.EventMap) EventServer{
+func DefaultServer(em *eventmap.EventMap) EventServer {
 	es := DefaultEventServer{em}
 }

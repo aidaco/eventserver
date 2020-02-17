@@ -1,7 +1,14 @@
 package log
 
-type DefaultLogger struct{
-	logger *log1.Logger
+import (
+	"io"
+	"log"
+	"os"
+	path "path/filepath"
+)
+
+type DefaultLogger struct {
+	logger *log.Logger
 }
 
 func (l *DefaultLogger) log(prefix string, msgs ...interface{}) {
@@ -21,7 +28,7 @@ func (l *DefaultLogger) Error(msg ...interface{}) {
 	l.log("ERROR:", msg)
 }
 
-func Default() *Logger{
+func NewDefaultLogger() *DefaultLogger {
 	eslogdir := os.Getenv("esLOGDIR")
 	if eslogdir == "" {
 		eslogdir = esLOGDIR
@@ -29,18 +36,16 @@ func Default() *Logger{
 
 	logdir, err := path.Abs(eslogdir)
 	if err != nil {
-		log1.Fatalln("Could not start logger: unable to open log file. \nDetails:", err)
+		log.Fatalln("Could not start logger: unable to open log file. \nDetails:", err)
 	}
 	logpath := path.Join(logdir, "LOG.txt")
 	logfile, err := os.OpenFile(logpath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil{
-		log1.Fatalln("Could not start logger: unable to open log file. \nDetails:", err)
+	if err != nil {
+		log.Fatalln("Could not start logger: unable to open log file. \nDetails:", err)
 	}
 
 	writer := io.MultiWriter(os.Stdout, logfile)
-	l := log1.New(writer, "", log1.LstdFlags|log1.Lshortfile)
+	l := log.New(writer, "", log.LstdFlags|log.Lshortfile)
 
-	var ret *Logger
-	ret = Logger(l)
-	return *Logger{ret}
+	return &DefaultLogger{l}
 }

@@ -1,12 +1,19 @@
-package eventserver
+package server
+
+import (
+	"github.com/aidaco/eventserver/eventmap"
+	"log"
+	"net/http"
+	"os"
+)
 
 type DefaultEventServer struct {
-	logger *log.Logger
+	logger   *log.Logger
 	eventmap *eventmap.EventMap
 }
 
 func (es *DefaultEventServer) Start() {
-	if port := os.Getenv("esPORT"); port == ""{
+	if port := os.Getenv("esPORT"); port == "" {
 		port = esPORT
 	}
 	err := http.ListenAndServe(fmt.SprintF(":%v", port), es)
@@ -15,7 +22,7 @@ func (es *DefaultEventServer) Start() {
 	os.Exit(1)
 }
 
-func (es *DefaultEventServer) ServeHTTP(w http.ResponseWriter, r *http.Request){
+func (es *DefaultEventServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Path
 	eventname := r.URL.Path[len("/"):]
 

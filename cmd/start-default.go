@@ -1,20 +1,20 @@
 package main
 
 import (
-	"github.com/2sdat/eventserver/server"
-	"github.com/2sdat/eventserver/eventmap"
-	"github.com/2sdat/eventserver/plugins"
-	"github.com/2sdat/eventserver/log"
+	"github.com/aidaco/eventserver/eventmap"
+	"github.com/aidaco/eventserver/log"
+	"github.com/aidaco/eventserver/plugins"
+	"github.com/aidaco/eventserver/server"
 )
 
-func DefaultLoader() (server *server.EventServer, eventmap *eventmap.EventMap, pluginloader *plugins.Loader(), logger *log.Logger) {
+func DefaultLoader() (s *server.EventServer, em *eventmap.EventMap, pl *plugins.Loader, l *log.Logger) {
 	log := log.NewDefaultLogger()
 
-	eventmap := eventmap.NewDefaultEventMap(log)
-	pluginloader := plugins.NewDefaultLoader(log)
-	pluginloader.LoadToMap(eventmap)
+	em = eventmap.NewDefaultEventMap(log)
+	pl = plugins.NewDefaultLoader(log)
+	pl.LoadToMap(em)
 
-	server := server.NewDefaultEventServer(eventmap)
+	s := server.NewDefaultEventServer(eventmap)
 }
 
 func main() {
