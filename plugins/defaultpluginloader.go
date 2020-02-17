@@ -1,27 +1,39 @@
 package plugins
 
+import (
+	"github.com/aidaco/eventserver/eventmap"
+	"github.com/aidaco/eventserver/log"
+	"io/ioutil"
+	"os"
+	path "path/filepath"
+	"plugin"
+)
+
 type DefaultPluginLoader struct {
 	logger *log.Logger
 }
 
 func (dl *DefaultPluginLoader) LoadToMap(em *eventmap.EventMap) {
-	if dirpath := os.Getenv("esPLUGINDIR"); dirpath == "" {
+	dirpath := os.Getenv("esPLUGINDIR")
+	if dirpath == "" {
 		dirpath = esPLUGINDIR
 	}
 
-	dirpath = path.Abs(dirpath)
-	dl.logger.Info("Searching for plugins in dir: ", dirpath)
+	dirpath, err := path.Abs(dirpath)
+	(*dl.logger).Info("Searching for plugins in dir: ", dirpath)
 
-	if direntries, err := ioutil.ReadDir(dirpath); err != nil {
-		dl.logger.Error("Unable to open plugin directory:", err)
+	direntries, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		(*dl.logger).Error("Unable to open plugin directory:", err)
 		os.Exit(1)
 	}
 
 	for _, f := range direntries {
-		if path.Ext(f) == ".so" {
-			eventname, handler, err = Load(path.Abs(path.Join(dirpath, f)))
+		if path.Ext(f.Name()) == ".so" {
+			pathtofile, err := path.Abs(path.Join(dirpath, f.Name()))
+			eventname, handler, err := dl.Load(pathtofile)
 			if err == nil {
-				em.RegisterHandler(eventname, &handler)
+				(*em).RegisterHandler(eventname, handler)
 			}
 		}
 	}
@@ -44,7 +56,9 @@ func (dl *DefaultPluginLoader) Load(file string) (eventname string, handler *eve
 		} else {
 			dl.logger.Warn("Error reading symbols from plugin '", f, "':", err1, err2)
 		}
-		if err1 == nil { return err2 }
+		if err1 == nil {
+			return err2
+		}
 	} else {
 		dl.logger.Warn("Failed to load plugin '", f, "':", err)
 	}

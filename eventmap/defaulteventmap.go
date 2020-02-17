@@ -1,38 +1,41 @@
 package eventmap
 
+import (
+	"errors"
+	"fmt"
+	"github.com/aidaco/eventserver/log"
+)
+
 type DefaultEventMap struct {
-	logger *log.logger
-	handlers *map[string]*EventHandler
+	logger   *log.Logger
+	handlers map[string]*EventHandler
 }
 
 func (em *DefaultEventMap) RegisterHandler(eventname string, handler *EventHandler) {
-	if _, exists = em.handlers[eventname]; exists {
-		em.logger.Warn("Handler for event '", eventname, "' already exists, replacing.")
-
-	em.handlers[eventname] = handler
-	em.logger.Info("Registered Handler:", eventname)
-}
-
-func (em *DefaultEventMap) RegisterHandlers(handlers *map[string]*EventHandler) {
-	for e, h := range handlers {
-		em.RegisterHandler(e, h)
+	if _, exists := em.handlers[eventname]; exists {
+		(*em.logger).Warn("Handler for event '", eventname, "' already exists, replacing.")
 	}
+	em.handlers[eventname] = handler
+	(*em.logger).Info("Registered Handler:", eventname)
 }
 
-func (em *DefaultEventMap) Handle(event Event) (res []byte, err error) {
-	if _, exists = em.handlers[event.name]; exists {
-		res, err = (*em.handlers[event.name])(*event)
-		if err {
-			em.logger.Warn("Handler '", event.name, "' failed:", err)
+func (em *DefaultEventMap) Handle(event Event) error {
+	var err error = nil
+	if _, exists := em.handlers[event.Name]; exists {
+		if err = (*em.handlers[event.Name])(&event); err == nil {
+			(*em.logger).Info("Handled '", event.Name)
+			return err
 		} else {
-			em.logger.Info("Handled '", event.name, "' with response:", res)
+			(*em.logger).Warn("Handler '", event.Name, "' failed:")
 		}
 	} else {
-		em.logger.Warn("Handler '", event.name, "' not registered")
-		err = errors.New("Handler '", event.name, "' not registered")
+		(*em.logger).Warn("Handler '", event.Name, "' not registered")
+		err = errors.New(fmt.Sprintf("Handler '%v' not registered", event.Name))
 	}
+
+	return err
 }
 
-func Default(l *log.Logger) (em *EventMap){
-	em = &DefaultEventMap{ l, make(*map[string]*EventHandler) }
+func NewDefaultEventMap(l *log.Logger) *DefaultEventMap {
+	return &DefaultEventMap{l, make(map[string]*EventHandler)}
 }
