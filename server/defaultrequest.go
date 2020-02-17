@@ -1,7 +1,13 @@
 package server
 
+import (
+	"io/ioutil"
+	"net/http"
+	"net/url"
+)
+
 type DefaultRequest struct {
-	r *http.Request
+	r    *http.Request
 	body []byte
 }
 
@@ -10,9 +16,10 @@ func (r *DefaultRequest) Body() []byte {
 		return r.body
 	}
 
-	if body, err := ioutil.ReadAll(r.Body); err != nil {
-		body := nil
-
+	body, err := ioutil.ReadAll(r.Request().Body)
+	if err != nil {
+		body = nil
+	}
 	r.body = body
 
 	return body
@@ -41,4 +48,3 @@ func (r *DefaultRequest) Method() string {
 func (r *DefaultRequest) Request() *http.Request {
 	return r.r
 }
-

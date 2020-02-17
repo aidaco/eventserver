@@ -5,19 +5,32 @@ import (
 	"github.com/aidaco/eventserver/log"
 	"github.com/aidaco/eventserver/plugins"
 	"github.com/aidaco/eventserver/server"
+	"net/http"
 )
 
-func DefaultLoader() (s *server.EventServer, em *eventmap.EventMap, pl *plugins.Loader, l *log.Logger) {
-	log := log.NewDefaultLogger()
+type Modules struct {
+	Log          log.Logger
+	EventMap     eventmap.EventMap
+	PluginLoader plugins.PluginLoader
+	Server       server.EventServer
+}
 
-	em = eventmap.NewDefaultEventMap(log)
-	pl = plugins.NewDefaultLoader(log)
-	pl.LoadToMap(em)
+func DefaultLoader() *Modules {
+	l := log.NewDefaultLogger()
+	em := eventmap.NewDefaultEventMap(l)
+	pl := plugins.NewDefaultPluginLoader(l)
+	plugins.LoadToEventMap(pl, em)
+	s := server.NewDefaultEventServer(l, em)
+	return &Modules{l, em, pl, s}
+}
 
-	s := server.NewDefaultEventServer(eventmap)
+func testHandler(event eventmap.Event) error {
+	event.Res.Text(http.StatusOK, "Hello, World!")
+	return nil
 }
 
 func main() {
-	server, eventmap, pluginloader, log = DefaultLoader()
-	server.Serve()
+	modules := DefaultLoader()
+	modules.EventMap.RegisterHandler("test", testHandler)
+	modules.Server.Start()
 }

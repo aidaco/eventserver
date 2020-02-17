@@ -1,49 +1,53 @@
 package server
 
 import (
+	"fmt"
 	"github.com/aidaco/eventserver/eventmap"
-	"log"
+	"github.com/aidaco/eventserver/log"
 	"net/http"
 	"os"
 )
 
 type DefaultEventServer struct {
-	logger   *log.Logger
-	eventmap *eventmap.EventMap
+	logger   log.Logger
+	eventMap eventmap.EventMap
 }
 
 func (es *DefaultEventServer) Start() {
-	if port := os.Getenv("esPORT"); port == "" {
+	port := os.Getenv("esPORT")
+	if port == "" {
 		port = esPORT
 	}
-	err := http.ListenAndServe(fmt.SprintF(":%v", port), es)
-	es.logger.Error("Server has stopped.")
-	log.Fatal(err)
+	es.logger.Info("Starting server...")
+	err := http.ListenAndServe(fmt.Sprintf(":%v", port), es)
+	es.logger.Error("Server no longer running with error:", err)
 	os.Exit(1)
 }
 
 func (es *DefaultEventServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Path
-	eventname := r.URL.Path[len("/"):]
+	eventName := url[len("/"):]
 
-	es.logger.Info("Received Request:", r.RemoteAddr, r.Method, r.URL, body)
+	es.logger.Info("Received Request:", r.RemoteAddr, r.Method, r.URL)
 
-	event := eventmap.Event{eventname, es.MakeRequest(r), es.MakeResponse(w)}
+	event := eventmap.Event{Name: eventName, Req: MakeDefaultRequest(r), Res: MakeDefaultResponse(w)}
 
-	if ok := es.eventmap.Handle(event); ok {
+	if err := es.eventMap.Handle(event); err == nil {
 		es.logger.Info("Processed Request:", r.RemoteAddr)
 	} else {
-		es.logger.Warn("Request on Invalid Event:", eventname)
+		es.logger.Warn("Request on Invalid Event:", eventName)
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
-func (es *DefaultEventServer) MakeResponse(w http.ResponseWriter) *Response {
-	res := &DefaultResponse{w}
-	return res
+func NewDefaultEventServer(logger log.Logger, eventMap eventmap.EventMap) *DefaultEventServer {
+	return &DefaultEventServer{logger: logger, eventMap: eventMap}
 }
 
-func (es *DefaultEventServer) MakeRequest(r *http.Request) *Request {
-	req := &DefaultRequest{r, nil}
-	return req
+func MakeDefaultResponse(w http.ResponseWriter) *DefaultResponse {
+	return &DefaultResponse{w}
+}
+
+func MakeDefaultRequest(r *http.Request) *DefaultRequest {
+	return &DefaultRequest{r, nil}
 }
