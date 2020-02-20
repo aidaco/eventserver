@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/aidaco/eventserver/eventmap"
 	"github.com/aidaco/eventserver/log"
-	"github.com/aidaco/eventserver/plugins"
+	"github.com/aidaco/eventserver/pluginloader"
 	"github.com/aidaco/eventserver/server"
 	"net/http"
 )
@@ -11,15 +11,15 @@ import (
 type Modules struct {
 	Log          log.Logger
 	EventMap     eventmap.EventMap
-	PluginLoader plugins.PluginLoader
+	PluginLoader pluginloader.PluginLoader
 	Server       server.EventServer
 }
 
 func DefaultLoader() *Modules {
 	l := log.NewDefaultLogger()
 	em := eventmap.NewDefaultEventMap(l)
-	pl := plugins.NewDefaultPluginLoader(l)
-	plugins.LoadToEventMap(pl, em)
+	pl := pluginloader.NewDefaultPluginLoader(l)
+	pluginloader.ToEventMap(pl, em)
 	s := server.NewDefaultEventServer(l, em)
 	return &Modules{l, em, pl, s}
 }
